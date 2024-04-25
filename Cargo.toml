@@ -1,0 +1,17 @@
+[package]
+name = "xddcc"
+version = "0.1.3"
+edition = "2021"
+authors = ["worksoup"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4"
+clap = { version = "4.5", features = ["derive"] }
+cxsign = { git = "https://github.com/worksoup/cxsign.git", branch = "newsign" }
+indicatif = "0.17"
+percent-encoding = "2.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2.9", features = ["cookies", "json"] }
