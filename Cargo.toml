@@ -19,7 +19,7 @@ version = "0.0.1"
 authors = ["learturely"]
 edition = "2021"
 license = "MIT"
-description = "XiDian Distant Courses Collecter"
+description = "XiDian Distant Courses Collector"
 documentation = "https://docs.rs/xddcc"
 repository = "https://github.com/learturely/xddcc"
 
