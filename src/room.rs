@@ -15,7 +15,6 @@
 
 use chrono::{Datelike, Local};
 use cxsign::user::Session;
-use indicatif::MultiProgress;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -24,9 +23,8 @@ use std::{
 
 use crate::tools::{
     arc_into_inner_error_handler, json_parsing_error_handler, mutex_into_inner_error_handler,
-    prog_init_error_handler,
 };
-use crate::{live::Live, tools::VideoPath};
+use crate::{live::Live, tools::VideoPath, ProgressTracker, ProgressTrackerHolder};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Room {
@@ -63,9 +61,13 @@ impl Room {
             .find(|r| r.id == live_id)
             .map(|r| r.trim()))
     }
-    pub fn get_all_rooms<'a, Iter: Iterator<Item=&'a Session> + Clone>(
+    pub fn get_all_rooms<
+        'a,
+        Iter: Iterator<Item = &'a Session> + Clone,
+        P: ProgressTracker + 'static,
+    >(
         mut sessions: Iter,
-        multi: &MultiProgress,
+        multi: &impl ProgressTrackerHolder<P>,
     ) -> HashMap<String, String> {
         let map = Arc::new(Mutex::new(HashMap::new()));
         Room::get_all_live_id(
@@ -82,21 +84,20 @@ impl Room {
             .into_inner()
             .unwrap_or_else(mutex_into_inner_error_handler)
     }
-    pub fn get_all_live_id(
+    pub fn get_all_live_id<P: ProgressTracker + 'static>(
         sessions: &[&Session],
         id_map: Arc<Mutex<HashMap<String, i64>>>,
-        multi: &MultiProgress,
+        multi: &impl ProgressTrackerHolder<P>,
     ) {
         let now_year = Local::now().year();
         let thread_count = 64 / sessions.len() as i32;
         let week_total = 6 * 60;
         let total = week_total * sessions.len() as i32;
-        let sty = indicatif::ProgressStyle::with_template(
+        let pb = multi.init(
+            total as u64,
             "获取直播号：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        )
-            .unwrap_or_else(prog_init_error_handler);
-        let pb = multi.add(indicatif::ProgressBar::new(total as u64));
-        pb.set_style(sty);
+        );
+
         let pb = Arc::new(Mutex::new(pb));
         let mut handles = Vec::new();
         for session in sessions.iter() {
@@ -132,24 +133,21 @@ impl Room {
             .unwrap_or_else(arc_into_inner_error_handler)
             .into_inner()
             .unwrap_or_else(mutex_into_inner_error_handler);
-        pb.finish_with_message("获取直播号完成。");
-        multi.remove(&pb);
+        pb.finish(multi, "获取直播号完成。");
     }
-    pub fn id_to_rooms(
+    pub fn id_to_rooms<P: ProgressTracker + 'static>(
         id_map: Arc<Mutex<HashMap<String, i64>>>,
         session: Session,
         rooms: Arc<Mutex<HashMap<String, String>>>,
-        multi: &MultiProgress,
+        pb_holder: &impl ProgressTrackerHolder<P>,
     ) {
         let ids = id_map.lock().unwrap().values().copied().collect::<Vec<_>>();
         let len = ids.len() as i32;
         let total = len;
-        let sty = indicatif::ProgressStyle::with_template(
+        let pb = pb_holder.init(
+            total as u64,
             "获取设备码：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        )
-            .unwrap();
-        let pb = multi.add(indicatif::ProgressBar::new(total as u64));
-        pb.set_style(sty);
+        );
         let pb = Arc::new(Mutex::new(pb));
         let thread_count = 64;
         let chunk_rest = len % thread_count;
@@ -180,7 +178,6 @@ impl Room {
             }
         }
         let pb = Arc::into_inner(pb).unwrap().into_inner().unwrap();
-        pb.finish_with_message("获取设备码完成。");
-        multi.remove(&pb);
+        pb.finish(pb_holder, "获取设备码完成。");
     }
 }

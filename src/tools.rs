@@ -28,10 +28,6 @@ pub(crate) fn resp_parsing_error_handler<T>(e: impl ErrorTrait) -> T {
     error!("响应数据无法转为字符串，错误信息：{e}.");
     panic!()
 }
-pub(crate) fn prog_init_error_handler<T>(e: impl ErrorTrait) -> T {
-    error!("json 解析出错！错误信息：{e}.");
-    panic!()
-}
 pub(crate) fn arc_into_inner_error_handler<T>() -> T {
     error!("Arc 指针为空！");
     panic!()

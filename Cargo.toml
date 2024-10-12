@@ -27,8 +27,6 @@ repository = "https://github.com/learturely/xddcc"
 chrono = "0.4"
 cxsign = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
 # cxsign = { path = "../newsign/" }
-indicatif = "0.17"
-indicatif-log-bridge = "0.2"
 inquire = "0.7"
 log = "0.4"
 percent-encoding = "2.3"

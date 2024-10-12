@@ -18,14 +18,13 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use cxsign::user::Session;
-use indicatif::MultiProgress;
-use serde::{Deserialize, Serialize};
-
 use super::tools::{
     arc_into_inner_error_handler, json_parsing_error_handler, mutex_into_inner_error_handler,
-    prog_init_error_handler, VideoPath,
+    VideoPath,
 };
+use crate::{ProgressTracker, ProgressTrackerHolder};
+use cxsign::user::Session;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 struct Time_ {
@@ -58,10 +57,10 @@ impl Lesson {
         lessons.sort_by_key(|l| l.get_start_time());
         Ok(lessons.into_iter().map(|l| l.get_live_id()).collect())
     }
-    pub fn get_recording_lives(
+    pub fn get_recording_lives<P: ProgressTracker + 'static>(
         session: &Session,
         live_id: i64,
-        multi: &MultiProgress,
+        multi: &impl ProgressTrackerHolder<P>,
     ) -> Result<HashMap<i64, VideoPath>, Box<ureq::Error>> {
         let lessons: Vec<Lesson> = crate::protocol::list_single_course(session, live_id)?
             .into_json()
@@ -69,12 +68,10 @@ impl Lesson {
         let total = lessons.len();
         let thread_count = total / 64;
         let rest_count = total % 64;
-        let sty = indicatif::ProgressStyle::with_template(
+        let pb = multi.init(
+            total as u64,
             "获取回放地址：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        )
-        .unwrap_or_else(prog_init_error_handler);
-        let pb = multi.add(indicatif::ProgressBar::new(total as u64));
-        pb.set_style(sty);
+        );
         let pb = Arc::new(Mutex::new(pb));
         let paths = Arc::new(Mutex::new(HashMap::new()));
         let mut handles = Vec::new();
@@ -112,8 +109,7 @@ impl Lesson {
             .unwrap_or_else(arc_into_inner_error_handler)
             .into_inner()
             .unwrap_or_else(mutex_into_inner_error_handler);
-        pb.finish_with_message("获取回放地址完成。");
-        multi.remove(&pb);
+        pb.finish(multi, "获取回放地址完成。");
         Ok(paths)
     }
 }

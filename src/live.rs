@@ -15,10 +15,10 @@
 
 use crate::{
     room::Room,
-    tools::{json_parsing_error_handler, prog_init_error_handler, VideoPath},
+    tools::{json_parsing_error_handler, VideoPath},
+    ProgressTracker, ProgressTrackerHolder,
 };
 use cxsign::user::Session;
-use indicatif::MultiProgress;
 use log::warn;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -74,10 +74,14 @@ impl Live {
         vec.sort_by_key(|live| live.get_jie());
         Ok(vec.first().cloned())
     }
-    pub fn get_lives_now<'a, Iter: Iterator<Item = &'a Session> + Clone>(
+    pub fn get_lives_now<
+        'a,
+        Iter: Iterator<Item = &'a Session> + Clone,
+        P: ProgressTracker + 'static,
+    >(
         sessions: Iter,
         this: bool,
-        multi: &MultiProgress,
+        multi: &impl ProgressTrackerHolder<P>,
     ) -> HashMap<&'a str, (&'a str, Room, VideoPath)> {
         let sessions = sessions.collect::<Vec<_>>();
         let total = sessions.len() as u64;
@@ -90,12 +94,10 @@ impl Live {
         // `Session` 的 `Hash` 实现不涉及内部可变的字段。
         #[allow(clippy::mutable_key_type)]
         let mut lives_map: HashMap<&Session, Live> = HashMap::new();
-        let sty = indicatif::ProgressStyle::with_template(
+        let pb = multi.init(
+            total,
             "获取直播号：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        )
-        .unwrap_or_else(prog_init_error_handler);
-        let pb = multi.add(indicatif::ProgressBar::new(total));
-        pb.set_style(sty);
+        );
         for session in sessions.clone() {
             if first {
                 (term_year, term, week) = crate::tools::term_year_detail(session);
@@ -108,19 +110,16 @@ impl Live {
             }
             pb.inc(1)
         }
-        pb.finish_with_message("获取直播号完成。");
-        multi.remove(&pb);
+        pb.finish(multi, "获取直播号完成。");
         let mut lives = HashSet::new();
         for live in lives_map.values() {
             lives.insert(live.get_id());
         }
         let mut rooms = HashMap::new();
-        let sty = indicatif::ProgressStyle::with_template(
+        let pb = multi.init(
+            total,
             "获取地址中：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        )
-        .unwrap_or_else(prog_init_error_handler);
-        let pb = multi.add(indicatif::ProgressBar::new(lives.len() as u64 * 2));
-        pb.set_style(sty);
+        );
         pb.inc(0);
         if let Some(session) = sessions.clone().into_iter().next() {
             for live in lives {
@@ -142,8 +141,7 @@ impl Live {
                 }
             }
         }
-        pb.finish_with_message("已获取直播地址。");
-        multi.remove(&pb);
+        pb.finish(multi, "已获取直播地址。");
         let mut results = HashMap::new();
         for (session, live) in lives_map {
             if let Some((room, video_path)) = rooms.get(&live.get_id()) {

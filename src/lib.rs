@@ -15,10 +15,12 @@
 
 pub mod lesson;
 mod live;
+mod progress;
 pub mod protocol;
 mod room;
 mod tools;
 
 pub use live::*;
+pub use progress::*;
 pub use room::*;
 pub use tools::*;
