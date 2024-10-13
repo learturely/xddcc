@@ -23,7 +23,7 @@ use super::tools::{
     VideoPath,
 };
 use crate::{ProgressState, ProgressTracker, ProgressTrackerHolder};
-use cxsign::user::Session;
+use cxsign_user::Session;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

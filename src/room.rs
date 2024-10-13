@@ -18,7 +18,7 @@ use crate::tools::{
 };
 use crate::{live::Live, tools::VideoPath, ProgressState, ProgressTracker, ProgressTrackerHolder};
 use chrono::{Datelike, Local};
-use cxsign::user::Session;
+use cxsign_user::Session;
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{

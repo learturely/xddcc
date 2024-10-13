@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use chrono::{Local, Timelike};
-use cxsign::user::Session;
+use cxsign_user::Session;
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use std::error::Error as ErrorTrait;
@@ -71,12 +71,12 @@ fn web_url_to_video_path(url: &WebUrl) -> VideoPath {
     }
     let Info {
         video_path:
-        VideoPathInternal {
-            ppt_video,
-            teacher_full,
-            teacher_track,
-            student_full,
-        },
+            VideoPathInternal {
+                ppt_video,
+                teacher_full,
+                teacher_track,
+                student_full,
+            },
     } = serde_json::from_str(&url).unwrap_or_else(json_parsing_error_handler);
     VideoPath {
         ppt_video,
@@ -190,11 +190,10 @@ pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
     let semester_id1 = year_to_semester_id(year - 1, 2);
     // 当前年份后半年的学期 id.
     let semester_id2 = year_to_semester_id(year, 1);
-    let WeekDetail { date1, .. } =
-        crate::protocol::get_week_detail(session, 1, semester_id1)
-            .unwrap()
-            .into_json()
-            .unwrap();
+    let WeekDetail { date1, .. } = crate::protocol::get_week_detail(session, 1, semester_id1)
+        .unwrap()
+        .into_json()
+        .unwrap();
     let WeekDetail { date1: date2, .. } =
         crate::protocol::get_week_detail(session, 1, semester_id2)
             .unwrap()
@@ -227,7 +226,7 @@ pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
     let term_begin_data_time = <chrono::DateTime<Local> as std::str::FromStr>::from_str(&format!(
         "{year}-{month}-{day}T00:00:00.0+08:00"
     ))
-        .unwrap();
+    .unwrap();
     let week = data_time
         .signed_duration_since(term_begin_data_time)
         .num_weeks()
@@ -281,7 +280,7 @@ mod tests {
         let term_begin_data_time = <chrono::DateTime<Local> as std::str::FromStr>::from_str(
             &format!("{year}-{month}-{day}T00:00:00.0+08:00"),
         )
-            .unwrap();
+        .unwrap();
         let week = data_time
             .signed_duration_since(term_begin_data_time)
             .num_weeks()

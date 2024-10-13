@@ -25,7 +25,7 @@ repository = "https://github.com/learturely/xddcc"
 
 [dependencies]
 chrono = "0.4"
-cxsign = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
+cxsign_user = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
 # cxsign = { path = "../newsign/" }
 inquire = "0.7"
 log = "0.4"
