@@ -37,6 +37,12 @@ pub struct Room {
     id: i64,
 }
 impl Room {
+    pub fn name(&self) -> &str {
+        self.name.as_str()
+    }
+    pub fn device_code(&self) -> &str {
+        self.device_code.as_str()
+    }
     fn trim(mut self) -> Self {
         let name = self.name.trim().to_string();
         let _ = std::mem::replace(&mut self.name, name);
@@ -138,7 +144,7 @@ impl Room {
             .unwrap_or_else(arc_into_inner_error_handler)
             .into_inner()
             .unwrap_or_else(mutex_into_inner_error_handler);
-        pb.finish(multi, ProgressState::GetLiveIds);
+        pb.finish(ProgressState::GetLiveIds);
         multi.remove_progress(&pb);
     }
     pub fn id_to_rooms<P: ProgressTracker + 'static>(
@@ -189,7 +195,7 @@ impl Room {
             }
         }
         let pb = Arc::into_inner(pb).unwrap().into_inner().unwrap();
-        pb.finish(pb_holder, ProgressState::GetDeviceCodes);
+        pb.finish(ProgressState::GetDeviceCodes);
         pb_holder.remove_progress(&pb);
     }
 }

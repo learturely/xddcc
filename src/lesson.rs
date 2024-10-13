@@ -106,7 +106,7 @@ impl Lesson {
             .unwrap_or_else(arc_into_inner_error_handler)
             .into_inner()
             .unwrap_or_else(mutex_into_inner_error_handler);
-        pb.finish(multi, ProgressState::GetRecordingLives);
+        pb.finish(ProgressState::GetRecordingLives);
         multi.remove_progress(&pb);
         Ok(paths)
     }

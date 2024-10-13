@@ -111,10 +111,8 @@ impl Live {
             }
             pb.inc(1)
         }
-        if pb.go_on() {
-            pb.finish(multi, ProgressState::GetLiveIds);
-            multi.remove_progress(&pb);
-        }
+        pb.finish(ProgressState::GetLiveIds);
+        multi.remove_progress(&pb);
         let mut lives = HashSet::new();
         for live in lives_map.values() {
             lives.insert(live.get_id());
@@ -162,9 +160,7 @@ impl Live {
                 }
             }
         }
-        if pb.go_on() {
-            pb.finish(multi, ProgressState::GetLiveUrls);
-        }
+        pb.finish(ProgressState::GetLiveUrls);
         multi.remove_progress(&pb);
         results
     }
