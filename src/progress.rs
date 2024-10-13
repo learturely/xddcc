@@ -7,7 +7,7 @@ pub trait ProgressTracker: Send + Sized {
     fn go_on(&self) -> bool {
         true
     }
-    fn finish(&self, progress_bar_holder: &impl ProgressTrackerHolder<Self>, data: ProgressState);
+    fn finish(&self, data: ProgressState);
 }
 #[non_exhaustive]
 pub enum ProgressState {
