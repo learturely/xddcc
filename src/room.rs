@@ -13,18 +13,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::tools::{
+    arc_into_inner_error_handler, json_parsing_error_handler, mutex_into_inner_error_handler,
+};
+use crate::{live::Live, tools::VideoPath, ProgressState, ProgressTracker, ProgressTrackerHolder};
 use chrono::{Datelike, Local};
 use cxsign::user::Session;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
-
-use crate::tools::{
-    arc_into_inner_error_handler, json_parsing_error_handler, mutex_into_inner_error_handler,
-};
-use crate::{live::Live, tools::VideoPath, ProgressTracker, ProgressTrackerHolder};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Room {
@@ -93,10 +93,7 @@ impl Room {
         let thread_count = 64 / sessions.len() as i32;
         let week_total = 6 * 60;
         let total = week_total * sessions.len() as i32;
-        let pb = multi.init(
-            total as u64,
-            "获取直播号：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        );
+        let pb = multi.init(total as u64, ProgressState::GetLiveIds);
 
         let pb = Arc::new(Mutex::new(pb));
         let mut handles = Vec::new();
@@ -105,6 +102,10 @@ impl Room {
             let thread_count = week_total / week_thread + 1;
             let week_rest = week_total % week_thread;
             for i in 0..thread_count {
+                if !pb.lock().unwrap().go_on() {
+                    debug!("list_rooms/get_all_live_id: break.");
+                    break;
+                }
                 let session = (*session).clone();
                 let id_map = Arc::clone(&id_map);
                 let pb = Arc::clone(&pb);
@@ -114,6 +115,10 @@ impl Room {
                     } else {
                         i * week_thread + week_rest
                     } {
+                        if !pb.lock().unwrap().go_on() {
+                            debug!("list_rooms/get_all_live_id: break.");
+                            break;
+                        }
                         let (year, term, week) =
                             crate::tools::date_count_to_year_term_week(now_year, date_count);
                         let lives = Live::get_lives(&session, week, year, term).unwrap_or_default();
@@ -133,7 +138,8 @@ impl Room {
             .unwrap_or_else(arc_into_inner_error_handler)
             .into_inner()
             .unwrap_or_else(mutex_into_inner_error_handler);
-        pb.finish(multi, "获取直播号完成。");
+        pb.finish(multi, ProgressState::GetLiveIds);
+        multi.remove_progress(&pb);
     }
     pub fn id_to_rooms<P: ProgressTracker + 'static>(
         id_map: Arc<Mutex<HashMap<String, i64>>>,
@@ -144,15 +150,16 @@ impl Room {
         let ids = id_map.lock().unwrap().values().copied().collect::<Vec<_>>();
         let len = ids.len() as i32;
         let total = len;
-        let pb = pb_holder.init(
-            total as u64,
-            "获取设备码：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        );
+        let pb = pb_holder.init(total as u64, ProgressState::GetDeviceCodes);
         let pb = Arc::new(Mutex::new(pb));
         let thread_count = 64;
         let chunk_rest = len % thread_count;
         let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 1 };
         for i in 0..chunk_count {
+            if !pb.lock().unwrap().go_on() {
+                debug!("list_rooms/id_to_rooms: break.");
+                break;
+            }
             let mut handles = Vec::new();
             let ids = &ids[(i * thread_count) as usize..if i != chunk_count - 1 {
                 (i + 1) * thread_count
@@ -165,6 +172,10 @@ impl Room {
                 let rooms = rooms.clone();
                 let pb = Arc::clone(&pb);
                 let handle = std::thread::spawn(move || {
+                    if !pb.lock().unwrap().go_on() {
+                        debug!("list_rooms/id_to_rooms: break.");
+                        return;
+                    }
                     let room = Room::get_rooms(&session, id).unwrap();
                     if let Some(room) = room {
                         rooms.lock().unwrap().insert(room.name, room.device_code);
@@ -178,6 +189,7 @@ impl Room {
             }
         }
         let pb = Arc::into_inner(pb).unwrap().into_inner().unwrap();
-        pb.finish(pb_holder, "获取设备码完成。");
+        pb.finish(pb_holder, ProgressState::GetDeviceCodes);
+        pb_holder.remove_progress(&pb);
     }
 }

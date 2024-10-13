@@ -1,8 +1,18 @@
 pub trait ProgressTrackerHolder<P: ProgressTracker> {
-    fn init(&self, total: u64, data: &str) -> P;
+    fn init(&self, total: u64, data: ProgressState) -> P;
     fn remove_progress(&self, progress: &P);
 }
 pub trait ProgressTracker: Send + Sized {
     fn inc(&self, delta: u64);
-    fn finish(&self, progress_bar_holder: &impl ProgressTrackerHolder<Self>, msg: &'static str);
+    fn go_on(&self) -> bool {
+        true
+    }
+    fn finish(&self, progress_bar_holder: &impl ProgressTrackerHolder<Self>, data: ProgressState);
+}
+#[non_exhaustive]
+pub enum ProgressState {
+    GetRecordingLives,
+    GetLiveIds,
+    GetLiveUrls,
+    GetDeviceCodes,
 }

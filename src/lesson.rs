@@ -22,7 +22,7 @@ use super::tools::{
     arc_into_inner_error_handler, json_parsing_error_handler, mutex_into_inner_error_handler,
     VideoPath,
 };
-use crate::{ProgressTracker, ProgressTrackerHolder};
+use crate::{ProgressState, ProgressTracker, ProgressTrackerHolder};
 use cxsign::user::Session;
 use serde::{Deserialize, Serialize};
 
@@ -68,10 +68,7 @@ impl Lesson {
         let total = lessons.len();
         let thread_count = total / 64;
         let rest_count = total % 64;
-        let pb = multi.init(
-            total as u64,
-            "获取回放地址：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        );
+        let pb = multi.init(total as u64, ProgressState::GetRecordingLives);
         let pb = Arc::new(Mutex::new(pb));
         let paths = Arc::new(Mutex::new(HashMap::new()));
         let mut handles = Vec::new();
@@ -109,7 +106,8 @@ impl Lesson {
             .unwrap_or_else(arc_into_inner_error_handler)
             .into_inner()
             .unwrap_or_else(mutex_into_inner_error_handler);
-        pb.finish(multi, "获取回放地址完成。");
+        pb.finish(multi, ProgressState::GetRecordingLives);
+        multi.remove_progress(&pb);
         Ok(paths)
     }
 }

@@ -16,10 +16,10 @@
 use crate::{
     room::Room,
     tools::{json_parsing_error_handler, VideoPath},
-    ProgressTracker, ProgressTrackerHolder,
+    ProgressState, ProgressTracker, ProgressTrackerHolder,
 };
 use cxsign::user::Session;
-use log::warn;
+use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -94,11 +94,12 @@ impl Live {
         // `Session` 的 `Hash` 实现不涉及内部可变的字段。
         #[allow(clippy::mutable_key_type)]
         let mut lives_map: HashMap<&Session, Live> = HashMap::new();
-        let pb = multi.init(
-            total,
-            "获取直播号：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        );
+        let pb = multi.init(total, ProgressState::GetLiveIds);
         for session in sessions.clone() {
+            if !pb.go_on() {
+                debug!("list_rooms/get_all_live_id: break.");
+                break;
+            }
             if first {
                 (term_year, term, week) = crate::tools::term_year_detail(session);
                 first = false;
@@ -110,19 +111,23 @@ impl Live {
             }
             pb.inc(1)
         }
-        pb.finish(multi, "获取直播号完成。");
+        if pb.go_on() {
+            pb.finish(multi, ProgressState::GetLiveIds);
+            multi.remove_progress(&pb);
+        }
         let mut lives = HashSet::new();
         for live in lives_map.values() {
             lives.insert(live.get_id());
         }
         let mut rooms = HashMap::new();
-        let pb = multi.init(
-            total,
-            "获取地址中：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        );
+        let pb = multi.init(total, ProgressState::GetLiveUrls);
         pb.inc(0);
         if let Some(session) = sessions.clone().into_iter().next() {
             for live in lives {
+                if !pb.go_on() {
+                    debug!("list_rooms/id_to_rooms: break.");
+                    break;
+                }
                 match Room::get_rooms(session, live) {
                     Ok(room) => {
                         if let Some(room) = room {
@@ -141,7 +146,6 @@ impl Live {
                 }
             }
         }
-        pb.finish(multi, "已获取直播地址。");
         let mut results = HashMap::new();
         for (session, live) in lives_map {
             if let Some((room, video_path)) = rooms.get(&live.get_id()) {
@@ -158,6 +162,10 @@ impl Live {
                 }
             }
         }
+        if pb.go_on() {
+            pb.finish(multi, ProgressState::GetLiveUrls);
+        }
+        multi.remove_progress(&pb);
         results
     }
 }
