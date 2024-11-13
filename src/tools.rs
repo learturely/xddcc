@@ -36,12 +36,20 @@ pub(crate) fn mutex_into_inner_error_handler<T>(e: impl ErrorTrait) -> T {
     error!("保有互斥锁的其他线程发生 panic, 错误信息：{e}.");
     panic!()
 }
-#[derive(Serialize, Default, Debug, Clone)]
+#[derive(Deserialize, Serialize, Default, Debug, Clone)]
 pub struct VideoPath {
     ppt_video: Option<String>,
     teacher_full: Option<String>,
     teacher_track: Option<String>,
     student_full: Option<String>,
+}
+impl VideoPath {
+    pub fn is_default(&self) -> bool {
+        self.teacher_full.is_none()
+            && self.teacher_track.is_none()
+            && self.student_full.is_none()
+            && self.ppt_video.is_none()
+    }
 }
 #[derive(Serialize, Default, Debug, Clone)]
 struct WebUrl {
