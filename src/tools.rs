@@ -48,7 +48,12 @@ struct WebUrl {
     url: String,
 }
 fn web_url_to_video_path(url: &WebUrl) -> VideoPath {
-    let url = &url.url.split("?info=").collect::<Vec<_>>()[1];
+    let url = url.url.split("?info=").collect::<Vec<_>>().get(1).cloned();
+    let url = if let Some(url) = url {
+        url
+    } else {
+        return VideoPath::default();
+    };
     let url = percent_encoding::percent_decode_str(url)
         .decode_utf8()
         .unwrap_or_default()
