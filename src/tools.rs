@@ -50,6 +50,21 @@ impl VideoPath {
             && self.student_full.is_none()
             && self.ppt_video.is_none()
     }
+    pub fn ppt_video(&self) -> &str {
+        self.ppt_video.as_ref().map(|s| s.as_str()).unwrap_or("")
+    }
+    pub fn teacher_full(&self) -> &str {
+        self.teacher_full.as_ref().map(|s| s.as_str()).unwrap_or("")
+    }
+    pub fn teacher_track(&self) -> &str {
+        self.teacher_track
+            .as_ref()
+            .map(|s| s.as_str())
+            .unwrap_or("")
+    }
+    pub fn student_full(&self) -> &str {
+        self.student_full.as_ref().map(|s| s.as_str()).unwrap_or("")
+    }
 }
 #[derive(Serialize, Default, Debug, Clone)]
 struct WebUrl {
