@@ -18,7 +18,7 @@ use crate::{
     tools::{json_parsing_error_handler, VideoPath},
     ProgressState, ProgressTracker, ProgressTrackerHolder,
 };
-use cxsign_user::Session;
+use cxlib_user::Session;
 use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};

@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use cxsign_user::Session;
+use cxlib_user::Session;
 use ureq::{Agent, Response};
 
 static GET_VIEW_URL_HLS: &str = "http://newesxidian.chaoxing.com/live/getViewUrlHls";

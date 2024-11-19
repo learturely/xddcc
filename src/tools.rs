@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use chrono::{Local, Timelike};
-use cxsign_user::Session;
+use cxlib_user::Session;
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use std::error::Error as ErrorTrait;
@@ -36,19 +36,47 @@ pub(crate) fn mutex_into_inner_error_handler<T>(e: impl ErrorTrait) -> T {
     error!("保有互斥锁的其他线程发生 panic, 错误信息：{e}.");
     panic!()
 }
-#[derive(Serialize, Default, Debug, Clone)]
+#[derive(Deserialize, Serialize, Default, Debug, Clone)]
 pub struct VideoPath {
     ppt_video: Option<String>,
     teacher_full: Option<String>,
     teacher_track: Option<String>,
     student_full: Option<String>,
 }
+impl VideoPath {
+    pub fn is_default(&self) -> bool {
+        self.teacher_full.is_none()
+            && self.teacher_track.is_none()
+            && self.student_full.is_none()
+            && self.ppt_video.is_none()
+    }
+    pub fn ppt_video(&self) -> &str {
+        self.ppt_video.as_ref().map(|s| s.as_str()).unwrap_or("")
+    }
+    pub fn teacher_full(&self) -> &str {
+        self.teacher_full.as_ref().map(|s| s.as_str()).unwrap_or("")
+    }
+    pub fn teacher_track(&self) -> &str {
+        self.teacher_track
+            .as_ref()
+            .map(|s| s.as_str())
+            .unwrap_or("")
+    }
+    pub fn student_full(&self) -> &str {
+        self.student_full.as_ref().map(|s| s.as_str()).unwrap_or("")
+    }
+}
 #[derive(Serialize, Default, Debug, Clone)]
 struct WebUrl {
     url: String,
 }
 fn web_url_to_video_path(url: &WebUrl) -> VideoPath {
-    let url = &url.url.split("?info=").collect::<Vec<_>>()[1];
+    let url = url.url.split("?info=").collect::<Vec<_>>().get(1).cloned();
+    let url = if let Some(url) = url {
+        url
+    } else {
+        return VideoPath::default();
+    };
     let url = percent_encoding::percent_decode_str(url)
         .decode_utf8()
         .unwrap_or_default()
