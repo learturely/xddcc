@@ -25,12 +25,10 @@ repository = "https://github.com/learturely/xddcc"
 
 [dependencies]
 chrono = "0.4"
-cxsign_user = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
-# cxsign = { path = "../newsign/" }
-inquire = "0.7"
+cxlib_user = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
+# cxlib = { path = "../newsign/" }
 log = "0.4"
 percent-encoding = "2.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 ureq = { version = "2.10", features = ["cookies", "json"] }
-xdsign_data = { git = "https://github.com/learturely/xdsign_data.git" }
