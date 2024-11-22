@@ -80,7 +80,7 @@ impl Live {
         P: ProgressTracker + 'static,
     >(
         sessions: Iter,
-        this: bool,
+        previous: bool,
         multi: &impl ProgressTrackerHolder<P>,
     ) -> HashMap<&'a str, (&'a str, Room, VideoPath)> {
         let sessions = sessions.collect::<Vec<_>>();
@@ -104,7 +104,7 @@ impl Live {
                 (term_year, term, week) = crate::tools::term_year_detail(session);
                 first = false;
             }
-            let jie = crate::tools::now_to_jie(this);
+            let jie = crate::tools::now_to_jie(previous);
             let live = Live::get_lives_by_time(session, term_year, term, week, week_day, jie);
             if let Ok(Some(live)) = live {
                 lives_map.insert(session, live);

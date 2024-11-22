@@ -163,32 +163,38 @@ pub fn date_count_to_year_term_week(now_year: i32, date_count: i32) -> (i32, i32
 //         debug!("{contents}")
 //     }
 // }
-pub fn now_to_jie(this: bool) -> i32 {
+pub fn now_to_jie(previous: bool) -> i32 {
     fn now_to_jie_internal() -> i32 {
         let date_time = Local::now();
-        let s1 = Local::now().with_hour(8).unwrap().with_minute(30).unwrap();
-        let s3 = Local::now().with_hour(10).unwrap().with_minute(25).unwrap();
-        let s5 = Local::now().with_hour(14).unwrap().with_minute(0).unwrap();
-        let s7 = Local::now().with_hour(15).unwrap().with_minute(55).unwrap();
-        let s9 = Local::now().with_hour(19).unwrap().with_minute(0).unwrap();
+        let s1 = Local::now().with_hour(10).unwrap().with_minute(05).unwrap();
+        let s3 = Local::now().with_hour(12).unwrap().with_minute(0).unwrap();
+        let s5 = Local::now().with_hour(15).unwrap().with_minute(35).unwrap();
+        let s7 = Local::now().with_hour(17).unwrap().with_minute(30).unwrap();
+        let s9 = Local::now().with_hour(20).unwrap().with_minute(35).unwrap();
         if date_time < s1 {
-            -1
-        } else if date_time >= s1 && date_time < s3 {
             1
-        } else if date_time >= s3 && date_time < s5 {
+        } else if date_time < s3 {
             3
-        } else if date_time >= s5 && date_time < s7 {
+        } else if date_time < s5 {
             5
-        } else if date_time >= s7 && date_time < s9 {
+        } else if date_time < s7 {
             7
-        } else {
+        } else if date_time < s9 {
             9
+        } else {
+            11
         }
     }
-    if !this {
-        now_to_jie_internal() + 2
+    if previous {
+        match now_to_jie_internal() - 2 {
+            -1 => 1,
+            a => a,
+        }
     } else {
-        now_to_jie_internal()
+        match now_to_jie_internal() {
+            11 => 9,
+            a => a,
+        }
     }
 }
 pub fn map_sort_by_key<K: Ord + Hash, V>(map: HashMap<K, V>) -> Vec<(K, V)> {
