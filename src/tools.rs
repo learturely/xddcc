@@ -51,19 +51,16 @@ impl VideoPath {
             && self.ppt_video.is_none()
     }
     pub fn ppt_video(&self) -> &str {
-        self.ppt_video.as_ref().map(|s| s.as_str()).unwrap_or("")
+        self.ppt_video.as_deref().unwrap_or_default()
     }
     pub fn teacher_full(&self) -> &str {
-        self.teacher_full.as_ref().map(|s| s.as_str()).unwrap_or("")
+        self.teacher_full.as_deref().unwrap_or_default()
     }
     pub fn teacher_track(&self) -> &str {
-        self.teacher_track
-            .as_ref()
-            .map(|s| s.as_str())
-            .unwrap_or("")
+        self.teacher_track.as_deref().unwrap_or_default()
     }
     pub fn student_full(&self) -> &str {
-        self.student_full.as_ref().map(|s| s.as_str()).unwrap_or("")
+        self.student_full.as_deref().unwrap_or_default()
     }
 }
 #[derive(Serialize, Default, Debug, Clone)]
@@ -166,7 +163,7 @@ pub fn date_count_to_year_term_week(now_year: i32, date_count: i32) -> (i32, i32
 pub fn now_to_jie(previous: bool) -> i32 {
     fn now_to_jie_internal() -> i32 {
         let date_time = Local::now();
-        let s1 = Local::now().with_hour(10).unwrap().with_minute(05).unwrap();
+        let s1 = Local::now().with_hour(10).unwrap().with_minute(5).unwrap();
         let s3 = Local::now().with_hour(12).unwrap().with_minute(0).unwrap();
         let s5 = Local::now().with_hour(15).unwrap().with_minute(35).unwrap();
         let s7 = Local::now().with_hour(17).unwrap().with_minute(30).unwrap();
