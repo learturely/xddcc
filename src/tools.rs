@@ -19,6 +19,7 @@ use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use std::error::Error as ErrorTrait;
 use std::{collections::HashMap, hash::Hash};
+use ureq::Response;
 
 pub(crate) fn json_parsing_error_handler<T>(e: impl ErrorTrait) -> T {
     error!("json 解析出错！错误信息：{e}.");
@@ -225,14 +226,14 @@ pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
         .unwrap()
         .into_json()
         .unwrap();
-    let WeekDetail { date1: date2, .. } =
-        crate::protocol::get_week_detail(session, 1, semester_id2)
-            .unwrap()
-            .into_json()
-            .unwrap();
     // 转换为可直接比较的数字。
     let date_number1 = str_to_date_number(&date1);
-    let date_number2 = str_to_date_number(&date2);
+    let date_number2 = if let Ok(w) = crate::protocol::get_week_detail(session, 1, semester_id2) {
+        let WeekDetail { date1: date2, .. } = w.into_json().unwrap();
+        str_to_date_number(&date2)
+    } else {
+        u32::MAX
+    };
     let date_number = date_number(
         chrono::Datelike::month(&data_time),
         chrono::Datelike::day(&data_time),
