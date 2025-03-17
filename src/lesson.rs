@@ -13,18 +13,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
-
 use super::tools::{
     arc_into_inner_error_handler, json_parsing_error_handler, mutex_into_inner_error_handler,
     VideoPath,
 };
 use crate::{ProgressState, ProgressTracker, ProgressTrackerHolder};
-use cxlib_user::Session;
+use cxlib_types::Session;
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 struct Time_ {
@@ -52,7 +51,8 @@ impl Lesson {
     }
     pub fn get_all_lessons(session: &Session, live_id: i64) -> Result<Vec<i64>, Box<ureq::Error>> {
         let mut lessons: Vec<Lesson> = crate::protocol::list_single_course(session, live_id)?
-            .into_json()
+            .into_body()
+            .read_json()
             .unwrap_or_else(json_parsing_error_handler);
         lessons.sort_by_key(|l| l.get_start_time());
         Ok(lessons.into_iter().map(|l| l.get_live_id()).collect())
@@ -63,7 +63,8 @@ impl Lesson {
         multi: &impl ProgressTrackerHolder<P>,
     ) -> Result<HashMap<i64, VideoPath>, Box<ureq::Error>> {
         let lessons: Vec<Lesson> = crate::protocol::list_single_course(session, live_id)?
-            .into_json()
+            .into_body()
+            .read_json()
             .unwrap_or_else(json_parsing_error_handler);
         let total = lessons.len();
         let thread_count = total / 64;

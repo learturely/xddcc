@@ -14,12 +14,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use chrono::{Local, Timelike};
-use cxlib_user::Session;
+use cxlib_types::Session;
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
-use std::error::Error as ErrorTrait;
-use std::{collections::HashMap, hash::Hash};
-use ureq::Response;
+use std::{collections::HashMap, error::Error as ErrorTrait, hash::Hash};
 
 pub(crate) fn json_parsing_error_handler<T>(e: impl ErrorTrait) -> T {
     error!("json 解析出错！错误信息：{e}.");
@@ -113,13 +111,15 @@ fn web_url_to_video_path(url: &WebUrl) -> VideoPath {
 }
 fn get_live_web_url(session: &Session, device_code: &str) -> Result<WebUrl, Box<ureq::Error>> {
     let url = crate::protocol::get_live_url(session, device_code)?
-        .into_string()
+        .into_body()
+        .read_to_string()
         .unwrap_or_else(resp_parsing_error_handler);
     Ok(WebUrl { url })
 }
 fn get_recording_live_web_url(session: &Session, live_id: i64) -> Result<WebUrl, Box<ureq::Error>> {
     let url = crate::protocol::get_view_url_hls(session, live_id)?
-        .into_string()
+        .into_body()
+        .read_to_string()
         .unwrap_or_else(resp_parsing_error_handler);
     Ok(WebUrl { url })
 }
@@ -224,12 +224,13 @@ pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
     let semester_id2 = year_to_semester_id(year, 1);
     let WeekDetail { date1, .. } = crate::protocol::get_week_detail(session, 1, semester_id1)
         .unwrap()
-        .into_json()
+        .into_body()
+        .read_json()
         .unwrap();
     // 转换为可直接比较的数字。
     let date_number1 = str_to_date_number(&date1);
     let date_number2 = if let Ok(w) = crate::protocol::get_week_detail(session, 1, semester_id2) {
-        let WeekDetail { date1: date2, .. } = w.into_json().unwrap();
+        let WeekDetail { date1: date2, .. } = w.into_body().read_json().unwrap();
         str_to_date_number(&date2)
     } else {
         u32::MAX
@@ -249,7 +250,8 @@ pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
             let WeekDetail { date1: date, .. } =
                 crate::protocol::get_week_detail(session, 1, semester_id)
                     .unwrap()
-                    .into_json()
+                    .into_body()
+                    .read_json()
                     .unwrap();
             (str_to_date_number(&date), year - 1, 1)
         };

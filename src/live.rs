@@ -18,7 +18,7 @@ use crate::{
     tools::{json_parsing_error_handler, VideoPath},
     ProgressState, ProgressTracker, ProgressTrackerHolder,
 };
-use cxlib_user::Session;
+use cxlib_types::Session;
 use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -48,7 +48,8 @@ impl Live {
         term: i32,
     ) -> Result<HashMap<String, i64>, Box<ureq::Error>> {
         let vec = crate::protocol::list_student_course_live_page(session, week, term_year, term)?
-            .into_json::<Vec<Live>>()
+            .into_body()
+            .read_json::<Vec<Live>>()
             .unwrap_or_else(json_parsing_error_handler);
         let mut map = HashMap::new();
         for i in vec {
@@ -65,7 +66,8 @@ impl Live {
         jie: i32,
     ) -> Result<Option<Live>, Box<ureq::Error>> {
         let vec = crate::protocol::list_student_course_live_page(session, week, term_year, term)?
-            .into_json::<Vec<Live>>()
+            .into_body()
+            .read_json::<Vec<Live>>()
             .unwrap_or_else(json_parsing_error_handler);
         let iter = vec
             .into_iter()
@@ -150,8 +152,8 @@ impl Live {
                 match video_path {
                     Ok(video_path) => {
                         results.insert(
-                            session.get_uid(),
-                            (session.get_stu_name(), room.clone(), video_path.clone()),
+                            session.uid(),
+                            (session.name(), room.clone(), video_path.clone()),
                         );
                     }
                     Err(e) => {

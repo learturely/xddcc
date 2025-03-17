@@ -18,7 +18,7 @@ use crate::tools::{
 };
 use crate::{live::Live, tools::VideoPath, ProgressState, ProgressTracker, ProgressTrackerHolder};
 use chrono::{Datelike, Local};
-use cxlib_user::Session;
+use cxlib_types::Session;
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -60,7 +60,8 @@ impl Room {
     // }
     pub fn get_rooms(session: &Session, live_id: i64) -> Result<Option<Room>, Box<ureq::Error>> {
         let rooms: Vec<Room> = crate::protocol::list_single_course(session, live_id)?
-            .into_json()
+            .into_body()
+            .read_json()
             .unwrap_or_else(json_parsing_error_handler);
         Ok(rooms
             .into_iter()
